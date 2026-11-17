@@ -1,0 +1,30 @@
+name: build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Protocol tests (host)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make -C tests
+
+  nro:
+    name: Switch 2 .nro (ounce-devkit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the ounce-devkit image
+        run: |
+          git clone --depth 1 https://github.com/ouncebrew/ounce-devkit.git /tmp/ounce-devkit
+          docker build -t ounce-devkit /tmp/ounce-devkit
+      - name: Build ouncemtp.nro
+        run: docker run --rm -v "$PWD:/build/ouncemtp" -w /build/ouncemtp ounce-devkit make -j"$(nproc)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ouncemtp
+          path: ouncemtp.nro
